@@ -77,7 +77,11 @@
 
 **Description:** Sends one immediate plain text status message.
 
-**Payload fields:** `batt`, `snr`, `rssi`, `neigh`, `sent`, `total`, `uptime`
+**Payload fields:** `batt`, `battp`, `nf`, `snr`, `rssi`, `neigh`, `sent`, `total`, `uptime`
+
+**Battery percentage:** `battp` is estimated for a single 18650 cell using a linear map (`3000 mV = 0%`, `4200 mV = 100%`), clamped to `0..100`.
+
+**Uptime format:** `DD:HH:MM:SS`
 
 **Note:** Message is sent on fixed hashtag channel `#rptstats`.
 

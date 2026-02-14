@@ -62,6 +62,12 @@
 #define LAZY_CONTACTS_WRITE_DELAY    5000
 #define GROUP_TEXT_MAX_LEN          160
 #define STATBROADCAST_HASHTAG       "#rptstats"
+#ifndef BATT_MIN_MILLIVOLTS
+  #define BATT_MIN_MILLIVOLTS       3000
+#endif
+#ifndef BATT_MAX_MILLIVOLTS
+  #define BATT_MAX_MILLIVOLTS       4200
+#endif
 
 void MyMesh::putNeighbour(const mesh::Identity &id, uint32_t timestamp, float snr) {
 #if MAX_NEIGHBOURS // check if neighbours enabled
@@ -145,12 +151,21 @@ bool MyMesh::sendStatBroadcast() {
 
   uint32_t total_packets = stats.n_packets_recv + stats.n_packets_sent;
   uint16_t neighbours_count = getNeighbourCount();
+  long batt_pct = ((long)stats.batt_milli_volts - BATT_MIN_MILLIVOLTS) * 100L / (BATT_MAX_MILLIVOLTS - BATT_MIN_MILLIVOLTS);
+  batt_pct = constrain(batt_pct, 0L, 100L);
+  uint32_t uptime_secs = stats.total_up_time_secs;
+  unsigned long up_days = uptime_secs / 86400UL;
+  uptime_secs %= 86400UL;
+  unsigned long up_hours = uptime_secs / 3600UL;
+  uptime_secs %= 3600UL;
+  unsigned long up_mins = uptime_secs / 60UL;
+  unsigned long up_secs = uptime_secs % 60UL;
 
   char text[128];
-  snprintf(text, sizeof(text), "batt=%lumV snr=%c%d.%02ddB rssi=%d neigh=%lu sent=%lu total=%lu uptime=%lus",
-           (unsigned long)stats.batt_milli_volts, snr_sign, (int)snr_whole, (int)snr_frac,
+  snprintf(text, sizeof(text), "batt=%lumV battp=%ld%% nf=%d snr=%c%d.%02ddB rssi=%d neigh=%lu sent=%lu total=%lu uptime=%02lu:%02lu:%02lu:%02lu",
+           (unsigned long)stats.batt_milli_volts, batt_pct, (int)stats.noise_floor, snr_sign, (int)snr_whole, (int)snr_frac,
            (int)stats.last_rssi, (unsigned long)neighbours_count, (unsigned long)stats.n_packets_sent,
-           (unsigned long)total_packets, (unsigned long)stats.total_up_time_secs);
+           (unsigned long)total_packets, up_days, up_hours, up_mins, up_secs);
 
   uint32_t timestamp = getRTCClock()->getCurrentTimeUnique();
   uint8_t temp[5 + GROUP_TEXT_MAX_LEN + 32];
