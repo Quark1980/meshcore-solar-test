@@ -61,6 +61,28 @@
 
 ---
 
+### Show stat broadcast status (Repeater Only)
+**Usage:**
+- `statbroadcast`
+
+**Description:** Shows whether periodic stat broadcast is enabled and its interval.
+
+**Note:** Broadcasts are sent as plain text group messages on fixed hashtag channel `#rptstats`.
+
+---
+
+### Send stat broadcast now (Repeater Only)
+**Usage:**
+- `statbroadcast now`
+
+**Description:** Sends one immediate plain text status message.
+
+**Payload fields:** `batt`, `snr`, `rssi`, `neigh`, `sent`, `total`, `uptime`
+
+**Note:** Message is sent on fixed hashtag channel `#rptstats`.
+
+---
+
 ### Start an Over-The-Air (OTA) firmware update
 **Usage:**
 - `start ota`
@@ -486,6 +508,20 @@
 - `minutes`: Interval in minutes rounded down to the nearest multiple of 2 (61 becomes 60) (60-240)
 
 **Default:** `0`
+
+---
+
+#### View or change the stat broadcast interval (Repeater Only)
+**Usage:**
+- `get statbroadcast.interval`
+- `set statbroadcast.interval <minutes>`
+
+**Parameters:**
+- `minutes`: Interval in minutes (`0-1440`). Use `0` to disable periodic broadcasts.
+
+**Default:** `60`
+
+**Note:** This controls periodic plain text status messages on fixed hashtag channel `#rptstats`.
 
 ---
 
