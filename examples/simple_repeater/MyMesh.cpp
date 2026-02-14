@@ -1,5 +1,6 @@
 #include "MyMesh.h"
 #include <algorithm>
+#include <Utils.h>
 
 /* ------------------------------ Config -------------------------------- */
 
@@ -59,6 +60,8 @@
 #define CLI_REPLY_DELAY_MILLIS      600
 
 #define LAZY_CONTACTS_WRITE_DELAY    5000
+#define GROUP_TEXT_MAX_LEN          160
+#define STATBROADCAST_HASHTAG       "#rptstats"
 
 void MyMesh::putNeighbour(const mesh::Identity &id, uint32_t timestamp, float snr) {
 #if MAX_NEIGHBOURS // check if neighbours enabled
@@ -85,6 +88,90 @@ void MyMesh::putNeighbour(const mesh::Identity &id, uint32_t timestamp, float sn
   neighbour->heard_timestamp = getRTCClock()->getCurrentTime();
   neighbour->snr = (int8_t)(snr * 4);
 #endif
+}
+
+void MyMesh::collectRepeaterStats(RepeaterStats& stats) {
+  stats.batt_milli_volts = board.getBattMilliVolts();
+  stats.curr_tx_queue_len = _mgr->getOutboundCount(0xFFFFFFFF);
+  stats.noise_floor = (int16_t)_radio->getNoiseFloor();
+  stats.last_rssi = (int16_t)radio_driver.getLastRSSI();
+  stats.n_packets_recv = radio_driver.getPacketsRecv();
+  stats.n_packets_sent = radio_driver.getPacketsSent();
+  stats.total_air_time_secs = getTotalAirTime() / 1000;
+  stats.total_up_time_secs = uptime_millis / 1000;
+  stats.n_sent_flood = getNumSentFlood();
+  stats.n_sent_direct = getNumSentDirect();
+  stats.n_recv_flood = getNumRecvFlood();
+  stats.n_recv_direct = getNumRecvDirect();
+  stats.err_events = _err_flags;
+  stats.last_snr = (int16_t)(radio_driver.getLastSNR() * 4);
+  stats.n_direct_dups = ((SimpleMeshTables *)getTables())->getNumDirectDups();
+  stats.n_flood_dups = ((SimpleMeshTables *)getTables())->getNumFloodDups();
+  stats.total_rx_air_time_secs = getReceiveAirTime() / 1000;
+  stats.n_recv_errors = radio_driver.getPacketsRecvErrors();
+}
+
+uint16_t MyMesh::getNeighbourCount() const {
+  uint16_t count = 0;
+#if MAX_NEIGHBOURS
+  for (int i = 0; i < MAX_NEIGHBOURS; i++) {
+    if (neighbours[i].heard_timestamp > 0) {
+      count++;
+    }
+  }
+#endif
+  return count;
+}
+
+void MyMesh::initStatsBroadcastChannel() {
+  memset(&stats_channel, 0, sizeof(stats_channel));
+
+  // Derive a fixed hashtag channel key from the hashtag text.
+  uint8_t derived[32];
+  mesh::Utils::sha256(derived, sizeof(derived), (const uint8_t *)STATBROADCAST_HASHTAG, strlen(STATBROADCAST_HASHTAG));
+  memcpy(stats_channel.secret, derived, 16);  // 128-bit channel secret
+  mesh::Utils::sha256(stats_channel.hash, sizeof(stats_channel.hash), stats_channel.secret, 16);
+}
+
+bool MyMesh::sendStatBroadcast() {
+  RepeaterStats stats;
+  collectRepeaterStats(stats);
+
+  int16_t snr_scaled = stats.last_snr;
+  int16_t snr_abs = snr_scaled < 0 ? -snr_scaled : snr_scaled;
+  int16_t snr_whole = snr_abs / 4;
+  int16_t snr_frac = (snr_abs % 4) * 25;
+  char snr_sign = snr_scaled < 0 ? '-' : '+';
+
+  uint32_t total_packets = stats.n_packets_recv + stats.n_packets_sent;
+  uint16_t neighbours_count = getNeighbourCount();
+
+  char text[128];
+  snprintf(text, sizeof(text), "batt=%lumV snr=%c%d.%02ddB rssi=%d neigh=%lu sent=%lu total=%lu uptime=%lus",
+           (unsigned long)stats.batt_milli_volts, snr_sign, (int)snr_whole, (int)snr_frac,
+           (int)stats.last_rssi, (unsigned long)neighbours_count, (unsigned long)stats.n_packets_sent,
+           (unsigned long)total_packets, (unsigned long)stats.total_up_time_secs);
+
+  uint32_t timestamp = getRTCClock()->getCurrentTimeUnique();
+  uint8_t temp[5 + GROUP_TEXT_MAX_LEN + 32];
+  memcpy(temp, &timestamp, 4);
+  temp[4] = 0;  // TXT_TYPE_PLAIN
+
+  sprintf((char *)&temp[5], "%s: ", _prefs.node_name);  // <sender>: <msg>
+  char *ep = strchr((char *)&temp[5], 0);
+  int prefix_len = ep - (char *)&temp[5];
+
+  int text_len = strlen(text);
+  if (text_len + prefix_len > GROUP_TEXT_MAX_LEN) text_len = GROUP_TEXT_MAX_LEN - prefix_len;
+  memcpy(ep, text, text_len);
+  ep[text_len] = 0;
+
+  auto pkt = createGroupDatagram(PAYLOAD_TYPE_GRP_TXT, stats_channel, temp, 5 + prefix_len + text_len);
+  if (pkt) {
+    sendFlood(pkt);
+    return true;
+  }
+  return false;
 }
 
 uint8_t MyMesh::handleLoginReq(const mesh::Identity& sender, const uint8_t* secret, uint32_t sender_timestamp, const uint8_t* data, bool is_flood) {
@@ -209,24 +296,7 @@ int MyMesh::handleRequest(ClientInfo *sender, uint32_t sender_timestamp, uint8_t
 
   if (payload[0] == REQ_TYPE_GET_STATUS) {  // guests can also access this now
     RepeaterStats stats;
-    stats.batt_milli_volts = board.getBattMilliVolts();
-    stats.curr_tx_queue_len = _mgr->getOutboundCount(0xFFFFFFFF);
-    stats.noise_floor = (int16_t)_radio->getNoiseFloor();
-    stats.last_rssi = (int16_t)radio_driver.getLastRSSI();
-    stats.n_packets_recv = radio_driver.getPacketsRecv();
-    stats.n_packets_sent = radio_driver.getPacketsSent();
-    stats.total_air_time_secs = getTotalAirTime() / 1000;
-    stats.total_up_time_secs = uptime_millis / 1000;
-    stats.n_sent_flood = getNumSentFlood();
-    stats.n_sent_direct = getNumSentDirect();
-    stats.n_recv_flood = getNumRecvFlood();
-    stats.n_recv_direct = getNumRecvDirect();
-    stats.err_events = _err_flags;
-    stats.last_snr = (int16_t)(radio_driver.getLastSNR() * 4);
-    stats.n_direct_dups = ((SimpleMeshTables *)getTables())->getNumDirectDups();
-    stats.n_flood_dups = ((SimpleMeshTables *)getTables())->getNumFloodDups();
-    stats.total_rx_air_time_secs = getReceiveAirTime() / 1000;
-    stats.n_recv_errors = radio_driver.getPacketsRecvErrors();
+    collectRepeaterStats(stats);
     memcpy(&reply_data[4], &stats, sizeof(stats));
 
     return 4 + sizeof(stats); //  reply_len
@@ -757,6 +827,7 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
   last_millis = 0;
   uptime_millis = 0;
   next_local_advert = next_flood_advert = 0;
+  next_statbroadcast = 0;
   dirty_contacts_expiry = 0;
   set_radio_at = revert_radio_at = 0;
   _logging = false;
@@ -801,6 +872,9 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
   _prefs.advert_loc_policy = ADVERT_LOC_PREFS;
 
   _prefs.adc_multiplier = 0.0f; // 0.0f means use default board multiplier
+  _prefs.statbroadcast_interval_mins = 60;
+
+  initStatsBroadcastChannel();
 }
 
 void MyMesh::begin(FILESYSTEM *fs) {
@@ -823,6 +897,7 @@ void MyMesh::begin(FILESYSTEM *fs) {
 
   updateAdvertTimer();
   updateFloodAdvertTimer();
+  updateStatBroadcastTimer();
 
   board.setAdcMultiplier(_prefs.adc_multiplier);
 
@@ -880,6 +955,14 @@ void MyMesh::updateFloodAdvertTimer() {
     next_flood_advert = futureMillis(((uint32_t)_prefs.flood_advert_interval) * 60 * 60 * 1000);
   } else {
     next_flood_advert = 0; // stop the timer
+  }
+}
+
+void MyMesh::updateStatBroadcastTimer() {
+  if (_prefs.statbroadcast_interval_mins > 0) {
+    next_statbroadcast = futureMillis(((uint32_t)_prefs.statbroadcast_interval_mins) * 60 * 1000);
+  } else {
+    next_statbroadcast = 0;
   }
 }
 
@@ -1168,6 +1251,14 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     } else {
       strcpy(reply, "Err - ??");
     }
+  } else if (strcmp(command, "statbroadcast now") == 0) {
+    strcpy(reply, sendStatBroadcast() ? "OK - stat broadcast sent" : "Err - send failed");
+  } else if (strcmp(command, "statbroadcast") == 0) {
+    if (_prefs.statbroadcast_interval_mins == 0) {
+      strcpy(reply, "statbroadcast off");
+    } else {
+      sprintf(reply, "statbroadcast every %u mins on %s", (uint32_t)_prefs.statbroadcast_interval_mins, STATBROADCAST_HASHTAG);
+    }
   } else{
     _cli.handleCommand(sender_timestamp, command, reply);  // common CLI commands
   }
@@ -1191,6 +1282,11 @@ void MyMesh::loop() {
     if (pkt) sendZeroHop(pkt);
 
     updateAdvertTimer(); // schedule next local advert
+  }
+
+  if (next_statbroadcast && millisHasNowPassed(next_statbroadcast)) {
+    sendStatBroadcast();
+    updateStatBroadcastTimer();
   }
 
   if (set_radio_at && millisHasNowPassed(set_radio_at)) { // apply pending (temporary) radio params

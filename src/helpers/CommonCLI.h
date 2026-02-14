@@ -52,6 +52,7 @@ struct NodePrefs { // persisted to file
   uint32_t discovery_mod_timestamp;
   float adc_multiplier;
   char owner_info[120];
+  uint16_t statbroadcast_interval_mins;  // 0 = off
 };
 
 class CommonCLICallbacks {
@@ -79,6 +80,9 @@ public:
   virtual void saveIdentity(const mesh::LocalIdentity& new_id) = 0;
   virtual void clearStats() = 0;
   virtual void applyTempRadioParams(float freq, float bw, uint8_t sf, uint8_t cr, int timeout_mins) = 0;
+  virtual void updateStatBroadcastTimer() {
+    // no op by default
+  };
 
   virtual void setBridgeState(bool enable) {
     // no op by default

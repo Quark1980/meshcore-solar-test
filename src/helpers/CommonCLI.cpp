@@ -81,7 +81,8 @@ void CommonCLI::loadPrefsInt(FILESYSTEM* fs, const char* filename) {
     file.read((uint8_t *)&_prefs->discovery_mod_timestamp, sizeof(_prefs->discovery_mod_timestamp)); // 162
     file.read((uint8_t *)&_prefs->adc_multiplier, sizeof(_prefs->adc_multiplier)); // 166
     file.read((uint8_t *)_prefs->owner_info, sizeof(_prefs->owner_info));  // 170
-    // 290
+    file.read((uint8_t *)&_prefs->statbroadcast_interval_mins, sizeof(_prefs->statbroadcast_interval_mins)); // 290
+    // 292
 
     // sanitise bad pref values
     _prefs->rx_delay_base = constrain(_prefs->rx_delay_base, 0, 20.0f);
@@ -107,6 +108,7 @@ void CommonCLI::loadPrefsInt(FILESYSTEM* fs, const char* filename) {
 
     _prefs->gps_enabled = constrain(_prefs->gps_enabled, 0, 1);
     _prefs->advert_loc_policy = constrain(_prefs->advert_loc_policy, 0, 2);
+    _prefs->statbroadcast_interval_mins = constrain((uint32_t)_prefs->statbroadcast_interval_mins, 0, 1440);
 
     file.close();
   }
@@ -165,7 +167,8 @@ void CommonCLI::savePrefs(FILESYSTEM* fs) {
     file.write((uint8_t *)&_prefs->discovery_mod_timestamp, sizeof(_prefs->discovery_mod_timestamp)); // 162
     file.write((uint8_t *)&_prefs->adc_multiplier, sizeof(_prefs->adc_multiplier));                 // 166
     file.write((uint8_t *)_prefs->owner_info, sizeof(_prefs->owner_info));  // 170
-    // 290
+    file.write((uint8_t *)&_prefs->statbroadcast_interval_mins, sizeof(_prefs->statbroadcast_interval_mins)); // 290
+    // 292
 
     file.close();
   }
@@ -325,6 +328,8 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, const char* command, ch
           sp++;
         }
         *reply = 0;  // set null terminator
+      } else if (memcmp(config, "statbroadcast.interval", 22) == 0) {
+        sprintf(reply, "> %d", (uint32_t)_prefs->statbroadcast_interval_mins);
       } else if (memcmp(config, "tx", 2) == 0 && (config[2] == 0 || config[2] == ' ')) {
         sprintf(reply, "> %d", (int32_t) _prefs->tx_power_dbm);
       } else if (memcmp(config, "freq", 4) == 0) {
@@ -545,6 +550,16 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, const char* command, ch
         *dp = 0;
         savePrefs();
         strcpy(reply, "OK");
+      } else if (memcmp(config, "statbroadcast.interval ", 23) == 0) {
+        uint32_t mins = _atoi(&config[23]);
+        if (mins > 1440) {
+          strcpy(reply, "Error: interval range is 0-1440 minutes");
+        } else {
+          _prefs->statbroadcast_interval_mins = (uint16_t)mins;
+          _callbacks->updateStatBroadcastTimer();
+          savePrefs();
+          strcpy(reply, "OK");
+        }
       } else if (memcmp(config, "tx ", 3) == 0) {
         _prefs->tx_power_dbm = atoi(&config[3]);
         savePrefs();

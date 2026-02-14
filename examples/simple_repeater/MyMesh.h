@@ -104,10 +104,12 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
 #endif
   CayenneLPP telemetry;
   unsigned long set_radio_at, revert_radio_at;
+  unsigned long next_statbroadcast;
   float pending_freq;
   float pending_bw;
   uint8_t pending_sf;
   uint8_t pending_cr;
+  mesh::GroupChannel stats_channel;
   int  matching_peer_indexes[MAX_CLIENTS];
 #if defined(WITH_RS232_BRIDGE)
   RS232Bridge bridge;
@@ -116,6 +118,10 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
 #endif
 
   void putNeighbour(const mesh::Identity& id, uint32_t timestamp, float snr);
+  void collectRepeaterStats(RepeaterStats& stats);
+  uint16_t getNeighbourCount() const;
+  void initStatsBroadcastChannel();
+  bool sendStatBroadcast();
   uint8_t handleLoginReq(const mesh::Identity& sender, const uint8_t* secret, uint32_t sender_timestamp, const uint8_t* data, bool is_flood);
   uint8_t handleAnonRegionsReq(const mesh::Identity& sender, uint32_t sender_timestamp, const uint8_t* data);
   uint8_t handleAnonOwnerReq(const mesh::Identity& sender, uint32_t sender_timestamp, const uint8_t* data);
@@ -190,6 +196,7 @@ public:
   void sendSelfAdvertisement(int delay_millis, bool flood) override;
   void updateAdvertTimer() override;
   void updateFloodAdvertTimer() override;
+  void updateStatBroadcastTimer() override;
 
   void setLoggingOn(bool enable) override { _logging = enable; }
 
