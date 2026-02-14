@@ -8,6 +8,35 @@ I am not the author of MeshCore. The original MeshCore project is authored and m
 
 This fork is focused on testing repeater status push messages over mesh. It is not intended for prolonged production use, but it can be used as-is for testing and experimentation.
 
+## Repeater Statbroadcast (Test Fork)
+
+This fork adds repeater status push messages as plain text group messages, compatible with Companion radios listening on the same hashtag channel.
+
+### New CLI Commands (Repeater)
+
+- `statbroadcast`
+  - Shows whether statbroadcast is enabled and the current interval.
+- `statbroadcast now`
+  - Sends one immediate plain text status message.
+- `get statbroadcast.interval`
+  - Shows the current periodic interval in minutes.
+- `set statbroadcast.interval <minutes>`
+  - Sets periodic interval in minutes (`0-1440`). Use `0` to disable periodic broadcasts.
+
+Status payload format:
+`<repeater_name>: batt=<mV> battp=<percent>% nf=<dBm> snr=<dB> rssi=<dBm> neigh=<count> sent=<count> total=<count> uptime=<DD:HH:MM:SS>`
+
+Fixed hashtag channel:
+- `#rptstats`
+
+### How Message Forwarding Works
+
+- Stat messages are created as standard plain text group packets (`PAYLOAD_TYPE_GRP_TXT`).
+- The repeater sends them using normal flood routing (same transport path as regular hashtag chat messages).
+- Any node that would normally forward flood traffic can forward these messages too, subject to normal repeater rules and limits.
+- Forwarding behavior is not special-cased for statbroadcast; it reuses the existing MeshCore forwarding pipeline.
+- Extra power draw is limited to composing and transmitting/forwarding these additional packets at the configured interval.
+
 MeshCore is a lightweight, portable C++ library that enables multi-hop packet routing for embedded projects using LoRa and other packet radios. It is designed for developers who want to create resilient, decentralized communication networks that work without the internet.
 
 ## 🔍 What is MeshCore?
