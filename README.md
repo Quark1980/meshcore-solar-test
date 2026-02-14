@@ -1,5 +1,13 @@
 ## About MeshCore
 
+## Fork Notice
+
+This repository is a test fork maintained by Quark1980.
+
+I am not the author of MeshCore. The original MeshCore project is authored and maintained by the upstream MeshCore team and contributors.
+
+This fork is focused on testing repeater status push messages over mesh. It is not intended for prolonged production use, but it can be used as-is for testing and experimentation.
+
 MeshCore is a lightweight, portable C++ library that enables multi-hop packet routing for embedded projects using LoRa and other packet radios. It is designed for developers who want to create resilient, decentralized communication networks that work without the internet.
 
 ## 🔍 What is MeshCore?
