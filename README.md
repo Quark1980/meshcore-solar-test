@@ -1,3 +1,11 @@
+> [!IMPORTANT]
+> **For New Visitors: Start Here**
+> - This is a **test fork** of upstream MeshCore: https://github.com/meshcore-dev/MeshCore
+> - Purpose: test repeater status push messages for solar repeater monitoring
+> - Overview: `docs/fork_overview.md`
+> - Quickstart: `docs/statbroadcast_quickstart.md`
+> - Full changelog: `docs/statbroadcast_changelog.md`
+
 ## About MeshCore
 
 ## Fork Overview (Quark1980)
