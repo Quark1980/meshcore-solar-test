@@ -43,6 +43,29 @@ It starts from the first implementation and lists updates up to the latest revis
 
 - Added noise floor as `nf` in status messages.
 
+## Iteration 7 - Upstream release sync (v1.13.0)
+
+- Branch merged with upstream release tag `repeater-v1.13.0`.
+- Statbroadcast functionality was retained after merge:
+  - fixed hashtag channel `#rptstats`
+  - interval CLI (`get/set statbroadcast.interval`)
+  - manual trigger (`statbroadcast now`)
+  - payload fields including `battp`, `nf`, `uptime`
+
+## Iteration 8 - Dated build artifact folder
+
+- Added dated firmware artifact folder for Heltec v4 repeater builds:
+  - `bin/HeltecRPT-2026-02-15/`
+- Included build files for later download/reuse:
+  - `firmware.bin`
+  - `bootloader.bin`
+  - `partitions.bin`
+  - `BUILD_INFO.txt`
+
+## Iteration 9 - Main page changelog
+
+- Added a "Latest Changelog" section to `README.md` so the current status is visible from the repository front page.
+
 ## Current status message fields
 
 - `batt` (battery millivolts)
@@ -54,4 +77,3 @@ It starts from the first implementation and lists updates up to the latest revis
 - `sent` (total sent packets)
 - `total` (sent + received packets)
 - `uptime` (`DD:HH:MM:SS`)
-

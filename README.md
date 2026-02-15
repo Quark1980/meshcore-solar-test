@@ -37,6 +37,19 @@ Fixed hashtag channel:
 - Forwarding behavior is not special-cased for statbroadcast; it reuses the existing MeshCore forwarding pipeline.
 - Extra power draw is limited to composing and transmitting/forwarding these additional packets at the configured interval.
 
+### Latest Changelog
+
+- 2026-02-15: Synced this branch with upstream `repeater-v1.13.0`.
+- 2026-02-15: Added dated Heltec v4 build artifacts in `bin/HeltecRPT-2026-02-15/` for later download/use.
+- 2026-02-14: Added `battp` (18650 estimate), `nf` (noise floor), and `uptime` in `DD:HH:MM:SS`.
+- 2026-02-14: Added interval control and manual send commands:
+  - `get statbroadcast.interval`
+  - `set statbroadcast.interval <minutes>`
+  - `statbroadcast now`
+  - `statbroadcast`
+- 2026-02-14: Added fixed hashtag broadcast channel `#rptstats` for testing.
+- Full change history: `docs/statbroadcast_changelog.md`
+
 MeshCore is a lightweight, portable C++ library that enables multi-hop packet routing for embedded projects using LoRa and other packet radios. It is designed for developers who want to create resilient, decentralized communication networks that work without the internet.
 
 ## 🔍 What is MeshCore?
