@@ -66,6 +66,16 @@ It starts from the first implementation and lists updates up to the latest revis
 
 - Added a "Latest Changelog" section to `README.md` so the current status is visible from the repository front page.
 
+## Iteration 10 - Configurable hashtag channel via CLI
+
+- Added repeater CLI support to view/change statbroadcast hashtag channel:
+  - `get statbroadcast.channel`
+  - `set statbroadcast.channel <hashtag_name>`
+- Channel name now persists in node preferences.
+- Input accepts hashtag with or without `#`; normalized to hashtag form internally.
+- Channel key derivation continues to follow hashtag-based derivation from channel name.
+- Default remains `#rptstats`.
+
 ## Current status message fields
 
 - `batt` (battery millivolts)

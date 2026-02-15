@@ -120,6 +120,8 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
   void putNeighbour(const mesh::Identity& id, uint32_t timestamp, float snr);
   void collectRepeaterStats(RepeaterStats& stats);
   uint16_t getNeighbourCount() const;
+  bool normalizeStatBroadcastChannel(const char* channel_name, char* normalized, size_t normalized_len) const;
+  bool setStatBroadcastChannel(const char* channel_name);
   void initStatsBroadcastChannel();
   bool sendStatBroadcast();
   uint8_t handleLoginReq(const mesh::Identity& sender, const uint8_t* secret, uint32_t sender_timestamp, const uint8_t* data, bool is_flood);

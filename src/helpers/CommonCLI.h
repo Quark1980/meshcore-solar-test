@@ -53,6 +53,7 @@ struct NodePrefs { // persisted to file
   float adc_multiplier;
   char owner_info[120];
   uint16_t statbroadcast_interval_mins;  // 0 = off
+  char statbroadcast_channel[32];        // hashtag channel name (for repeaters)
 };
 
 class CommonCLICallbacks {

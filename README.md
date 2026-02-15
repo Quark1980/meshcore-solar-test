@@ -22,11 +22,15 @@ This fork adds repeater status push messages as plain text group messages, compa
   - Shows the current periodic interval in minutes.
 - `set statbroadcast.interval <minutes>`
   - Sets periodic interval in minutes (`0-1440`). Use `0` to disable periodic broadcasts.
+- `get statbroadcast.channel`
+  - Shows the hashtag channel currently used for statbroadcast.
+- `set statbroadcast.channel <hashtag>`
+  - Sets the hashtag channel for statbroadcast (`#` optional in input; key is derived from hashtag name).
 
 Status payload format:
 `<repeater_name>: batt=<mV> battp=<percent>% nf=<dBm> snr=<dB> rssi=<dBm> neigh=<count> sent=<count> total=<count> uptime=<DD:HH:MM:SS>`
 
-Fixed hashtag channel:
+Default hashtag channel:
 - `#rptstats`
 
 ### How Message Forwarding Works
@@ -45,9 +49,11 @@ Fixed hashtag channel:
 - 2026-02-14: Added interval control and manual send commands:
   - `get statbroadcast.interval`
   - `set statbroadcast.interval <minutes>`
+  - `get statbroadcast.channel`
+  - `set statbroadcast.channel <hashtag>`
   - `statbroadcast now`
   - `statbroadcast`
-- 2026-02-14: Added fixed hashtag broadcast channel `#rptstats` for testing.
+- 2026-02-14: Added default hashtag broadcast channel `#rptstats` (now configurable via CLI).
 - Full change history: `docs/statbroadcast_changelog.md`
 
 MeshCore is a lightweight, portable C++ library that enables multi-hop packet routing for embedded projects using LoRa and other packet radios. It is designed for developers who want to create resilient, decentralized communication networks that work without the internet.

@@ -69,7 +69,7 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
 
 **Description:** Shows whether periodic stat broadcast is enabled and its interval.
 
-**Note:** Broadcasts are sent as plain text group messages on fixed hashtag channel `#rptstats`.
+**Note:** Broadcasts are sent as plain text group messages on configured hashtag channel (`get statbroadcast.channel`).
 
 ---
 
@@ -85,7 +85,7 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
 
 **Uptime format:** `DD:HH:MM:SS`
 
-**Note:** Message is sent on fixed hashtag channel `#rptstats`.
+**Note:** Message is sent on the configured hashtag channel.
 
 ---
 
@@ -527,7 +527,23 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
 
 **Default:** `60`
 
-**Note:** This controls periodic plain text status messages on fixed hashtag channel `#rptstats`.
+**Note:** This controls periodic plain text status messages.
+
+---
+
+#### View or change the stat broadcast hashtag channel (Repeater Only)
+**Usage:**
+- `get statbroadcast.channel`
+- `set statbroadcast.channel <hashtag_name>`
+
+**Parameters:**
+- `hashtag_name`: Hashtag channel name. `#` is optional in input (for example `rptstats` or `#rptstats`).
+
+**Default:** `#rptstats`
+
+**Notes:**
+- Channel key is derived from the hashtag name.
+- Allowed characters follow MeshCore hashtag/region naming rules.
 
 ---
 

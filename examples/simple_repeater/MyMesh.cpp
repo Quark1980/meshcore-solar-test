@@ -129,12 +129,70 @@ uint16_t MyMesh::getNeighbourCount() const {
   return count;
 }
 
+bool MyMesh::normalizeStatBroadcastChannel(const char* channel_name, char* normalized, size_t normalized_len) const {
+  if (normalized == NULL || normalized_len < 3 || channel_name == NULL) {
+    return false;
+  }
+
+  while (*channel_name == ' ') {
+    channel_name++;
+  }
+  size_t in_len = strlen(channel_name);
+  while (in_len > 0 && channel_name[in_len - 1] == ' ') {
+    in_len--;
+  }
+  if (in_len == 0) {
+    return false;
+  }
+
+  const char* name = channel_name;
+  if (*name == '#') {
+    name++;
+    in_len--;
+  }
+  if (in_len == 0) {
+    return false;
+  }
+
+  normalized[0] = '#';
+  size_t out_len = 1;
+  for (size_t i = 0; i < in_len; i++) {
+    char c = name[i];
+    if (c == '#' || !RegionMap::is_name_char((uint8_t)c)) {
+      return false;
+    }
+    if (out_len + 1 >= normalized_len) {
+      return false;
+    }
+    normalized[out_len++] = c;
+  }
+  normalized[out_len] = 0;
+  return true;
+}
+
+bool MyMesh::setStatBroadcastChannel(const char* channel_name) {
+  char normalized[sizeof(_prefs.statbroadcast_channel)];
+  if (!normalizeStatBroadcastChannel(channel_name, normalized, sizeof(normalized))) {
+    return false;
+  }
+
+  StrHelper::strncpy(_prefs.statbroadcast_channel, normalized, sizeof(_prefs.statbroadcast_channel));
+  initStatsBroadcastChannel();
+  return true;
+}
+
 void MyMesh::initStatsBroadcastChannel() {
   memset(&stats_channel, 0, sizeof(stats_channel));
 
-  // Derive a fixed hashtag channel key from the hashtag text.
+  char normalized[sizeof(_prefs.statbroadcast_channel)];
+  if (!normalizeStatBroadcastChannel(_prefs.statbroadcast_channel, normalized, sizeof(normalized))) {
+    StrHelper::strncpy(normalized, STATBROADCAST_HASHTAG, sizeof(normalized));
+  }
+  StrHelper::strncpy(_prefs.statbroadcast_channel, normalized, sizeof(_prefs.statbroadcast_channel));
+
+  // Derive hashtag channel key from the channel text.
   uint8_t derived[32];
-  mesh::Utils::sha256(derived, sizeof(derived), (const uint8_t *)STATBROADCAST_HASHTAG, strlen(STATBROADCAST_HASHTAG));
+  mesh::Utils::sha256(derived, sizeof(derived), (const uint8_t *)normalized, strlen(normalized));
   memcpy(stats_channel.secret, derived, 16);  // 128-bit channel secret
   mesh::Utils::sha256(stats_channel.hash, sizeof(stats_channel.hash), stats_channel.secret, 16);
 }
@@ -888,6 +946,7 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
 
   _prefs.adc_multiplier = 0.0f; // 0.0f means use default board multiplier
   _prefs.statbroadcast_interval_mins = 60;
+  StrHelper::strncpy(_prefs.statbroadcast_channel, STATBROADCAST_HASHTAG, sizeof(_prefs.statbroadcast_channel));
 
   initStatsBroadcastChannel();
 }
@@ -897,6 +956,7 @@ void MyMesh::begin(FILESYSTEM *fs) {
   _fs = fs;
   // load persisted prefs
   _cli.loadPrefs(_fs);
+  initStatsBroadcastChannel();  // statbroadcast channel might have been loaded from prefs
   acl.load(_fs, self_id);
   // TODO: key_store.begin();
   region_map.load(_fs);
@@ -1268,11 +1328,20 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     }
   } else if (strcmp(command, "statbroadcast now") == 0) {
     strcpy(reply, sendStatBroadcast() ? "OK - stat broadcast sent" : "Err - send failed");
+  } else if (strcmp(command, "get statbroadcast.channel") == 0) {
+    sprintf(reply, "> %s", _prefs.statbroadcast_channel);
+  } else if (memcmp(command, "set statbroadcast.channel ", 26) == 0) {
+    if (setStatBroadcastChannel(&command[26])) {
+      savePrefs();
+      sprintf(reply, "OK - statbroadcast.channel=%s", _prefs.statbroadcast_channel);
+    } else {
+      strcpy(reply, "Error: invalid hashtag (example: #rptstats)");
+    }
   } else if (strcmp(command, "statbroadcast") == 0) {
     if (_prefs.statbroadcast_interval_mins == 0) {
-      strcpy(reply, "statbroadcast off");
+      sprintf(reply, "statbroadcast off on %s", _prefs.statbroadcast_channel);
     } else {
-      sprintf(reply, "statbroadcast every %u mins on %s", (uint32_t)_prefs.statbroadcast_interval_mins, STATBROADCAST_HASHTAG);
+      sprintf(reply, "statbroadcast every %u mins on %s", (uint32_t)_prefs.statbroadcast_interval_mins, _prefs.statbroadcast_channel);
     }
   } else{
     _cli.handleCommand(sender_timestamp, command, reply);  // common CLI commands
