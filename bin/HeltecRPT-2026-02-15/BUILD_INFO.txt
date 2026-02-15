@@ -1,0 +1,9 @@
+Build Folder: bin\HeltecRPT-2026-02-15
+Branch: pr/IoTThinks/1687
+Commit: 6f7188fd4235c285ac14d1e0cf160402352faae7
+Build Time: 2026-02-15 14:47:45 +01:00
+Board: heltec_v4_repeater
+Flash layout:
+  0x0000 bootloader.bin
+  0x8000 partitions.bin
+  0x10000 firmware.bin
