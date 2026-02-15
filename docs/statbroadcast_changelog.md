@@ -76,6 +76,14 @@ It starts from the first implementation and lists updates up to the latest revis
 - Channel key derivation continues to follow hashtag-based derivation from channel name.
 - Default remains `#rptstats`.
 
+## Iteration 11 - Repository navigation cleanup
+
+- Reworked `README.md` top section to clearly identify this repository as a test fork of upstream MeshCore.
+- Added dedicated docs pages for easier navigation:
+  - `docs/fork_overview.md` (origin, intent, upstream strategy)
+  - `docs/statbroadcast_quickstart.md` (how to use the feature quickly)
+- Added direct "what changed / why / how to use" links from the GitHub front page.
+
 ## Current status message fields
 
 - `batt` (battery millivolts)

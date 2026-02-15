@@ -1,60 +1,48 @@
 ## About MeshCore
 
-## Fork Notice
+## Fork Overview (Quark1980)
 
-This repository is a test fork maintained by Quark1980.
+This repository is a **test fork** of the upstream MeshCore project:
 
-I am not the author of MeshCore. The original MeshCore project is authored and maintained by the upstream MeshCore team and contributors.
+- Upstream project: https://github.com/meshcore-dev/MeshCore
+- Upstream author/maintainers: MeshCore team and contributors
+- This fork owner: Quark1980
 
-This fork is focused on testing repeater status push messages over mesh. It is not intended for prolonged production use, but it can be used as-is for testing and experimentation.
+I am **not** the author of MeshCore.  
+This fork exists to test plain text repeater status push messages over mesh so solar repeater performance can be monitored over time from a companion radio.
 
-## Repeater Statbroadcast (Test Fork)
+### Scope and Intent
 
-This fork adds repeater status push messages as plain text group messages, compatible with Companion radios listening on the same hashtag channel.
+- Purpose: testing and experimentation
+- Primary addition: `statbroadcast` feature for repeater status messages
+- Not intended as a long-term production branch
+- If the approach is validated, the goal is to move back toward the upstream MeshCore base
 
-### New CLI Commands (Repeater)
+### Quick Navigation
 
-- `statbroadcast`
-  - Shows whether statbroadcast is enabled and the current interval.
-- `statbroadcast now`
-  - Sends one immediate plain text status message.
-- `get statbroadcast.interval`
-  - Shows the current periodic interval in minutes.
-- `set statbroadcast.interval <minutes>`
-  - Sets periodic interval in minutes (`0-1440`). Use `0` to disable periodic broadcasts.
-- `get statbroadcast.channel`
-  - Shows the hashtag channel currently used for statbroadcast.
-- `set statbroadcast.channel <hashtag>`
-  - Sets the hashtag channel for statbroadcast (`#` optional in input; key is derived from hashtag name).
+- Why this fork exists: `docs/fork_overview.md`
+- How to use the feature: `docs/statbroadcast_quickstart.md`
+- Full iteration history: `docs/statbroadcast_changelog.md`
+- CLI reference: `docs/cli_commands.md`
+- Dated firmware binaries: `bin/HeltecRPT-YYYY-MM-DD/`
 
-Status payload format:
-`<repeater_name>: batt=<mV> battp=<percent>% nf=<dBm> snr=<dB> rssi=<dBm> neigh=<count> sent=<count> total=<count> uptime=<DD:HH:MM:SS>`
+### What Was Added (Testing Feature)
 
-Default hashtag channel:
-- `#rptstats`
-
-### How Message Forwarding Works
-
-- Stat messages are created as standard plain text group packets (`PAYLOAD_TYPE_GRP_TXT`).
-- The repeater sends them using normal flood routing (same transport path as regular hashtag chat messages).
-- Any node that would normally forward flood traffic can forward these messages too, subject to normal repeater rules and limits.
-- Forwarding behavior is not special-cased for statbroadcast; it reuses the existing MeshCore forwarding pipeline.
-- Extra power draw is limited to composing and transmitting/forwarding these additional packets at the configured interval.
-
-### Latest Changelog
-
-- 2026-02-15: Synced this branch with upstream `repeater-v1.13.0`.
-- 2026-02-15: Added dated Heltec v4 build artifacts in `bin/HeltecRPT-2026-02-15/` for later download/use.
-- 2026-02-14: Added `battp` (18650 estimate), `nf` (noise floor), and `uptime` in `DD:HH:MM:SS`.
-- 2026-02-14: Added interval control and manual send commands:
+- Periodic plain-text repeater status broadcasts using existing group/flood message flow
+- CLI controls:
+  - `statbroadcast`
+  - `statbroadcast now`
   - `get statbroadcast.interval`
   - `set statbroadcast.interval <minutes>`
   - `get statbroadcast.channel`
   - `set statbroadcast.channel <hashtag>`
-  - `statbroadcast now`
-  - `statbroadcast`
-- 2026-02-14: Added default hashtag broadcast channel `#rptstats` (now configurable via CLI).
-- Full change history: `docs/statbroadcast_changelog.md`
+- Default channel: `#rptstats` (now configurable via CLI)
+- Status fields: `batt`, `battp`, `nf`, `snr`, `rssi`, `neigh`, `sent`, `total`, `uptime`
+
+### Current Base
+
+- Release base synced: `repeater-v1.13.0`
+- Local test additions are documented in `docs/statbroadcast_changelog.md`
 
 MeshCore is a lightweight, portable C++ library that enables multi-hop packet routing for embedded projects using LoRa and other packet radios. It is designed for developers who want to create resilient, decentralized communication networks that work without the internet.
 
